@@ -8,30 +8,7 @@ import yaml
 
 MAINPATH = "D:/FakePipeline"
 
-def convertTemplate2REX(pipeline):
-	""""""
-
-	filePath = "<root>/<proj>/NUKE/_timeline/<ep>/<shot>/scripts/<shot>_v<version>.nk"
-
-	i = 0
-
-	def replMet(matchobj):
-		nonlocal i
-		if i==0:
-			i+=1
-			#print(matchobj.groups())
-			return matchobj.expand(r'(?P<\1>\\w+)')
-		else:
-			i+=1
-			#print(matchobj.groups())
-			return matchobj.expand(r'(?P=\1)')
-
-	for each in ["proj", "ep", "shot"]:
-		i = 0
-
-		print(re.sub("<(%s)>" %each, replMet, "<root>/<proj>/NUKE/<ep>/<shot>/<shot>_v001"))
-
-class ProjectHierachy():
+class ProjectHierarchy():
 	def __init__(self, projectName, root=MAINPATH):
 		self.root = MAINPATH
 		self.descriptor = {}
@@ -50,43 +27,32 @@ class ProjectHierachy():
 
 		self.hierarchyOrder = [ list( each.keys() )[0] for each in self.descriptor["pipeline"]["hierarchy"] ]
 
-		# self.epiPath = "<root>/<proj>/EPISODES/"
-		# self.compPath = "<root>/<proj>/NUKE/_timeline/<ep>/<shot>/scripts/<shot>_v<version>.nk" #E:\146_BACKUP_LTO\aykut_eniste_2_fw25096\nuke\Reel_1\AE2_R01_S001_P0010\scripts
-		# self.renderPath = "<root>/<proj>/NUKE/_timeline/<ep>/<shot>/renders/<shot>_v<version>/"
-		# self.draftPath = "<root>/<proj>/EPISODES/<ep>/FROM_ONLINE/PREVIEW/"
-
-	def getEntityFromCompFile(self, compFile):
-		""""""
-		self.compREGEX = r"[a-zA-Z0-9_/:]+/(?P<proj>[a-zA-Z0-9_ ]+)/NUKE/_timeline/(?P<ep>\w+)/(?P<shot>\w+)/scripts/(?P=shot)_v(?P<version>\d{2}).nk"
-		#self.compREGEX = r"[a-zA-Z0-9_/:]+/(?P<proj>\w+)/NUKE/(?P<ep>\w+)/_timeline/(?P<shot>\w+)/scripts/(?P=shot)_v(?P<version>\d{2}).nk"
-
-		matchObj = re.match(self.compREGEX, compFile)
-
-		try:
-			if len(matchObj.groups()) != 4:
-				print("This comp file does not that the pipeline!")
-				raise
-		except AttributeError as e:
-			print("This comp file does not that the pipeline!")
-			raise
-
-		return matchObj.groups()
-
 	def convertTemplate2REX(self, pipeline):
 		""""""
 
-		filePath = self.descriptor["pipeline"][pipeline]
+		filePath = re.sub("<root>", self.root, self.descriptor["pipeline"][pipeline])
 
 		for i in range(len(self.hierarchyOrder)):
 			count = 0
 			
-			print(list(self.descriptor["pipeline"]["hierarchy"][i].items())[0][1])
+			regex = r'\\w+'
+			nameConvention = list( self.descriptor["pipeline"]["hierarchy"][i].items() )[0][1] if isinstance(self.descriptor["pipeline"]["hierarchy"][i], dict) else None
+
+			if nameConvention:
+				if nameConvention == "text":
+					regex = r'\\w+'
+				elif nameConvention.startswith("num"):
+					matchObj = re.match(r"num(\d+)", "num02")
+					if len(matchObj.groups()) == 1:
+						regex = r'\\d{%d}' %int( matchObj.group(1) )
+					else:
+						raise
 			
 			def replMet(matchobj):
-				nonlocal count
+				nonlocal count, regex
 				if count==0:
 					count+=1
-					return matchobj.expand(r'(?P<\1>\\w+)')
+					return matchobj.expand(r'(?P<\1>%s)' %regex)
 				else:
 					count+=1
 					return matchobj.expand(r'(?P=\1)')
@@ -94,12 +60,38 @@ class ProjectHierachy():
 			filePath = re.sub("<(%s)>" %self.hierarchyOrder[i], replMet, filePath)
 
 		return filePath
+		
+	def entitiesFromCompPath(self, filePath):
+		# self.compREGEX = r"[a-zA-Z0-9_/:]+/(?P<proj>[a-zA-Z0-9_ ]+)/NUKE/_timeline/(?P<ep>\w+)/(?P<shot>\w+)/scripts/(?P=shot)_v(?P<version>\d{2}).nk"
+		regex = self.convertTemplate2REX("compPath")
+		
+		return self._readEntitiesFromPath(regex, filePath)
 
-	def listCompPath(self, *inputs):
+	def entitiesFromCompOutputPath(self, filePath):
+		# self.compREGEX = r"[a-zA-Z0-9_/:]+/(?P<proj>[a-zA-Z0-9_ ]+)/NUKE/_timeline/(?P<ep>\w+)/(?P<shot>\w+)/scripts/(?P=shot)_v(?P<version>\d{2}).nk"
+		regex = self.convertTemplate2REX("compOutputPath")
+		
+		return self._readEntitiesFromPath(regex, filePath)
+
+	def _readEntitiesFromPath(self, regex, filePath):
+		""""""
+		matchObj = re.match(regex, filePath)
+
+		try:
+			if len(matchObj.groups()) != len(self.hierarchyOrder):
+				print("This comp file is not in the pipeline!")
+				raise
+		except AttributeError as e:
+			print("This comp file is not in the pipeline!")
+			raise
+
+		return matchObj.groups()
+
+	def listCompPaths(self, *inputs):
 		""""""
 		return self._listPaths("compPath", *inputs)
 
-	def listCompOutputPath(self, *inputs):
+	def listCompOutputPaths(self, *inputs):
 		""""""
 		return self._listPaths("compOutputPath", *inputs)
 
@@ -180,6 +172,6 @@ if __name__ == "__main__":
 	# print(bb)
 	# cc = xx.listCompPaths(*aa)
 	# print(cc)
-	cc = xx.convertTemplate2REX("compPath")
+	cc = xx.entitiesFromCompPath("D:/FakePipeline/THE_GIFT/NUKE/101/_timeline/TG_101_S001_P0005/scripts/TG_101_S001_P0005_v03.nk")
 
 	print(cc)

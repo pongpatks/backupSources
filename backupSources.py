@@ -20,8 +20,8 @@ SOURCESFILE = "C:\\Users\\1000Volt\\Documents\\purgeMats\\collect_strict.txt"
 
 BACKUP_ROOT = "E:"
 
-hierachy = traverse.ProjectHierachy(None)
-scriptPathList = hierachy.listCompPaths("Gamonya_fw23695", "", "")
+hierarchy = traverse.ProjectHierarchy(None)
+scriptPathList = hierarchy.listCompPaths("Gamonya_fw23695", "", "")
 
 FORMAT = '%(asctime)-15s %(message)s'
 logging.basicConfig(filename='C:\\Users\\1000Volt\\Documents\\purgeMats\\error.log', format=FORMAT, encoding='utf-8', level=logging.ERROR)
@@ -154,7 +154,7 @@ def backupScript(scriptPath):
 
 	entities = None
 	try:
-		entities = hierachy.getEntityFromCompFile(scriptPath)
+		entities = hierarchy.entitiesFromCompPath(scriptPath)
 	except:
 		print("Unexpected error:", sys.exc_info()[0])
 		logging.error("Unexpected error:", sys.exc_info()[0])
@@ -207,7 +207,7 @@ def backupScript(scriptPath):
 		logging.info("Backup output..")
 		print("Backup output..")
 		
-		outputPath = hierachy.transcribeRenderPath(*entities)
+		outputPath = hierarchy.transcribeCompOutputPath(*entities)
 
 		newOutputSplit = [BACKUP_ROOT, entities[0], entities[1], entities[2], "Output", os.path.basename(outputPath)]
 		newOutputPath = "/".join(newOutputSplit)
