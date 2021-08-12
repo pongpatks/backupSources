@@ -6,6 +6,11 @@ Goal:
 	-shot entity is needed for organizing data. Tree structure is best. External library? For now, dict of dict implemented as tree is enough?
 - Because Nuke's Python is outdated. Let's seperate script. One dedicated for running within nuke and print query data. Main one intercept and read these outputs and operate on them.
 
+Print nukescript's sources:
+- as library called by both main app and inside nuke? or method inside nuke script then main app import this.
+- one big log file or separated per nukescripts? Must be big log file.
+- can we even keep running nuke in interactive commandline mode? and keep feeding it new nukescript path? or have to run nuke per number of nukescripts?
+
 Descriptor[Done]
 - workflow should be defined! No customization! Don't give option to user!
 - Seperated public method, then call private method..

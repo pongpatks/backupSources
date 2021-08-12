@@ -14,13 +14,13 @@ sys.path.append("C:\\Users\\1000Volt\\Documents\\purgeMats")
 import nuke
 
 import copyLib
-import traverse
+import pipeline
 
 SOURCESFILE = "C:\\Users\\1000Volt\\Documents\\purgeMats\\collect_strict.txt"
 
 BACKUP_ROOT = "E:"
 
-hierarchy = traverse.ProjectHierarchy(None)
+hierarchy = pipeline.ProjectHierarchy(None)
 scriptPathList = hierarchy.listCompPaths("Gamonya_fw23695", "", "")
 
 FORMAT = '%(asctime)-15s %(message)s'
@@ -144,6 +144,9 @@ class backupDataTree():
 
 		# if not shot in self.projs[proj][seq]:
 		self.projs[proj][seq][shot] = sources
+
+def haha():
+	os.system()
 
 def backupScript(scriptPath):
 	""""""
@@ -306,18 +309,6 @@ def backupScript(scriptPath):
 
 	print("---")
 	return copiesLog
-
-def writeList(toWriteList, filename):
-	""""""
-	try:
-		textfile = open(filename, "w")
-		for each in toWriteList:
-			textfile.write(each+"\n")
-
-		textfile.close()
-	except:
-		print("Unexpected error:", sys.exc_info()[0])
-		logging.error("Unexpected error:", sys.exc_info()[0])
 
 def main():
 	"""Main"""
