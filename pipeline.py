@@ -6,7 +6,7 @@ import sys
 
 import yaml
 
-MAINPATH = "D:/FakePipeline"
+MAINPATH = "N:/NETFLIX/Project"
 
 class ProjectHierarchy():
 	def __init__(self, projectName, root=MAINPATH):
@@ -16,7 +16,7 @@ class ProjectHierarchy():
 		self.loadProjectDescriptor(projectName, root)
 
 	def loadProjectDescriptor(self, projectName, root=MAINPATH):
-		"""In future, should we read this from xml input?"""
+		"""Load project detail yaml"""
 
 		self.root = root
 
@@ -163,6 +163,7 @@ class ProjectHierarchy():
 
 		return "/".join(pathSplit)
 
+# Test
 if __name__ == "__main__":
 	xx = ProjectHierachy("50M2")
 	# compPath = "X:/PROJECTS/_BACKUP/Gamonya_fw23695/NUKE/_timeline/Reel_1/GMY_S001_P001/scripts/GMY_S001_P001_v04.nk"

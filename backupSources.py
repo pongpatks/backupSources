@@ -9,14 +9,8 @@ import subprocess
 import errno
 import time
 
-sys.path.append("C:\\Users\\1000Volt\\Documents\\purgeMats")
-
 import nuke
-
-import copyLib
 import pipeline
-
-SOURCESFILE = "C:\\Users\\1000Volt\\Documents\\purgeMats\\collect_strict.txt"
 
 BACKUP_ROOT = "E:"
 
@@ -44,151 +38,45 @@ def getHeroScripts(scriptPath):
 		latestVerScriptPath = rScriptPath + sortedVerValidScripts[-1]
 		potentialHeroScripts.append(latestVerScriptPath)
 
-	# if sortedLastModScriptPaths:
-	# 	if latestVerScriptPath != sortedLastModScriptPaths[-1]:
-	# 		potentialHeroScripts.append(sortedLastModScriptPaths[-1])
-
 	return potentialHeroScripts
-
-def backupSources(sourcesFile, backupPath):
-	""""""
-	logging.basicConfig(filename='C:\\Users\\1000Volt\\Documents\\purgeMats\\result.log', encoding='utf-8', level=logging.INFO)
-
-	sourceList = []
-
-	txt = open(sourcesFile, "r")
-	for eachLine in txt:
-		sourceList.append(eachLine)
-
-	txt.close()
-
-	info1 = "Copying %s paths to %s" %(len(sourceList), backupPath)
-	print(info1)
-	logging.info(info1)
-
-	count = 0
-
-	for source in sourceList:
-		unixPath = source
-		
-		seqString = re.search("(?<=%)\d+(?=d)", os.path.basename(source))
-		
-		# Check if source is file sequence, then convert to unix style.
-		if seqString:
-			seqDigit = int(seqString.group())
-			unixName = re.sub("%\d+d", "[0-9]"*seqDigit, os.path.basename(source))
-
-			unixPath = os.path.join(os.path.dirname(source), unixName)
-
-		info2 = "%s: %s" %(count, unixPath)
-		print(info2)
-		logging.info(info2)
-
-		# Copy file loop
-		copyList = glob.glob(unixPath)
-
-		for eachFile in copyList:
-			backupFilePath = os.path.join( backupPath, os.path.splitdrive(eachFile)[-1])
-
-			if not os.path.exists(os.path.dirname(backupFilePath)):
-				os.makedirs(os.path.dirname(backupFilePath))
-			
-			# try:
-			subprocessCopy(eachFile, backupFilePath)
-			# except IOError as io_err:
-			# 	print(io_err)
-			# 	logging.error(io_err)
-
-		count+=1
-
-	print("Backup finished")
-	logging.info("Backup finished")
-
-def gatherFileReferences(scriptName):
-	""""""
-	refPaths = []
-
-	try:
-		nuke.scriptOpen(scriptName)
-
-		for eachNode in nuke.allNodes():
-			if eachNode.Class() in ['Read', 'ReadGeo2']:
-				print("---")
-
-				readfile = eachNode['file'].value()
-
-				print(readfile)
-				refPaths.append(readfile)
-		
-		nuke.scriptClose()
-		print("=========================")
-	except:
-		print("Unexpected error:", sys.exc_info()[0])
-		logging.error("Unexpected error:", sys.exc_info()[0])
-
-		nuke.scriptClose()
-		raise
-
-	return refPaths
-
-class backupDataTree():
-	def __init__(self):
-		self.projs = {}
-
-	def addShot(proj, seq, shot, sources):
-		if not proj in self.projs:
-			self.projs[proj] = {}
-
-		if not seq in self.projs[proj]:
-			self.projs[proj][seq] = {}
-
-		# if not shot in self.projs[proj][seq]:
-		self.projs[proj][seq][shot] = sources
-
-def haha():
-	os.system()
 
 def backupScript(scriptPath):
 	""""""
 	copiesLog = []
 	sourcesSet = set()
 
-	print(scriptPath)
-
 	entities = None
 	try:
 		entities = hierarchy.entitiesFromCompPath(scriptPath)
 	except:
-		print("Unexpected error:", sys.exc_info()[0])
 		logging.error("Unexpected error:", sys.exc_info()[0])
 		raise
 
-	# Script
+
+	# Backup script
 	scriptBackupDir = "/".join([BACKUP_ROOT, entities[0], entities[1], entities[2], "Scripts"])
 
 	if not os.path.exists(scriptBackupDir):
 		os.makedirs(scriptBackupDir)
 	else:
-		print("Script found. The shot have been copied. Skip current shot.")
 		logging.info("Script found. The shot have been copied. Skip current shot.")
 		return copiesLog
-	print("Backup script..")
+
 	logging.info("Backup script..")
 
-	# allNukes = glob.glob(os.path.join(os.path.dirname(scriptPath), "*.nk"))
-
-	# for each in allNukes:
 	shutil.copy(scriptPath, scriptBackupDir)
 
+
+	# Open nukescript
 	try:
-		
 		logging.info("Opening %s" %scriptPath)
 		nuke.scriptOpen(scriptPath)
 	except RuntimeError as e:
 		print(e)
 		logging.error(e)
 
-	# Sources
+
+	# Collect sources
 	logging.info("Collecting file nodes..")
 	for eachNode in nuke.allNodes():
 		eachNodeKnobs = eachNode.knobs()
@@ -203,7 +91,7 @@ def backupScript(scriptPath):
 
 	nuke.scriptClose()
 
-	# Output
+	# Backup render
 	outputPath = ""
 
 	try:
@@ -226,21 +114,18 @@ def backupScript(scriptPath):
 
 		else:
 			logging.error("Error: Backup path already exists: %s" %(newOutputPath))
-			print("Error: Backup path already exists: %s" %(newOutputPath))
-		# else:
-		# 	logging.error("Error: Cannot find: %s" %(outputPath))
-		# 	print("Error: Cannot find: %s" %(outputPath))
 	except:
-		print("Unexpected error:", sys.exc_info()[0])
 		logging.error("Unexpected error:", sys.exc_info()[0])
 		# raise
 
 	logging.info("Backup %s sourcepaths.." %(len(sourcesSet)))
-	print("Backup %s sourcepaths.." %(len(sourcesSet)))
+
+
+	# Backup sources
 	for src in sourcesSet:
 		starttime = time.time()
 		logging.info("from :%s" %(src))
-		print("from :%s" %(src))
+
 		copiesLog.append(src)
 		unixPath = src
 
@@ -264,7 +149,6 @@ def backupScript(scriptPath):
 		elif "material" in unixPath.lower():
 			srcType = "Materials"
 		elif "FROM_" in unixPath:
-			#srcType = re.split(entities[1] + "/", os.path.dirname(unixPath), 1)[-1]
 			srcType = re.search("FROM_[\w_/]+", os.path.dirname(unixPath)).group()
 		elif "mattepaint" in unixPath.lower() or unixPath.endswith(".psd"):
 			srcType = "MATTEPAINT"
@@ -276,7 +160,6 @@ def backupScript(scriptPath):
 
 		backupDir = "/".join(backupPathSplit)
 		logging.info("to: %s" %(backupDir))
-		print("to: %s" %(backupDir))
 
 		# Copy file loop
 		copyList = glob.glob(unixPath)
@@ -286,8 +169,9 @@ def backupScript(scriptPath):
 				os.makedirs(backupDir)		
 			for eachFile in copyList:
 				shutil.copy(eachFile, backupDir)
-				# subprocessCopy(eachFile, backupDir)
 
+				# Which of these is faster?
+				# subprocessCopy(eachFile, backupDir)
 				# shutil.copyfile(eachFile, backupFilePath)
 			# osCopy(eachFile, backupFilePath)
 		except OSError as e:
@@ -300,38 +184,24 @@ def backupScript(scriptPath):
 				logging.error(e)
 				raise
 		except:
-			print("Unexpected error:", sys.exc_info()[0])
 			logging.error("Unexpected error:", sys.exc_info()[0])
 			raise
 
-		# count+=1		
 		print("took %s seconds" %(time.time() - starttime))
-
 	print("---")
 	return copiesLog
 
 def main():
 	"""Main"""
 	allMatList = set()
-	whateverList = []
 
 	for scriptPath in scriptPathList:
 		potentialHeroScripts = getHeroScripts(scriptPath)
 		
 		for hero in potentialHeroScripts:
-			whateverList.append(hero)
-			# Open nuke and get all read and write nodes.
-			# refPaths = gatherFileReferences(hero)
+			# Open nuke, collect all read and write nodes, copy to back up server.
 			refPaths = backupScript(hero)
 
-			whateverList.extend(refPaths)
-
-
 	print("writing file..")
-
-	# whatever = "C:\\Users\\3D02\\Documents\\purgeMats\\nodeThatHasFile.txt"
-	# writeList(whateverList, whatever)
-
-	# backupSources(SOURCESFILE, "F:/")
 
 main()
